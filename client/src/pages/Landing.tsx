@@ -1,6 +1,6 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const Landing: React.FC = () => {
   const { login } = useAuth();
@@ -17,89 +17,113 @@ const Landing: React.FC = () => {
 
   return (
     <div className="landing-page">
-      <header className="hero">
-        <h1 className="title">AnonCare</h1>
+      <div className="bg-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
+
+      <motion.header 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="hero"
+      >
+        <h1 className="title gradient-text">AnonCare</h1>
         <p className="subtitle">Heal anonymously. Speak freely. Be heard without judgment.</p>
+        
         <div className="features">
-          <div className="feature-card">
-            <h3>Anonymous Chat</h3>
-            <p>Connect with others using random aliases. No personal data needed.</p>
-          </div>
-          <div className="feature-card">
-            <h3>AI Support</h3>
-            <p>Get immediate, 24/7 empathetic basic support from our AI guide.</p>
-          </div>
-          <div className="feature-card">
-            <h3>Verified Therapists</h3>
-            <p>Access professional help through secure, anonymous sessions.</p>
-          </div>
+          {[
+            { title: 'Anonymous Chat', desc: 'Connect with others using random aliases. No personal data needed.', icon: '💬' },
+            { title: 'AI Support', desc: 'Get immediate, 24/7 empathetic basic support from our AI guide.', icon: '🤖' },
+            { title: 'Verified Therapists', desc: 'Access professional help through secure, anonymous sessions.', icon: '🎓' }
+          ].map((feature, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
+              className="feature-card glass-card"
+            >
+              <div className="feature-icon">{feature.icon}</div>
+              <h3>{feature.title}</h3>
+              <p>{feature.desc}</p>
+            </motion.div>
+          ))}
         </div>
-        <button onClick={handleStart} className="start-btn">
+
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleStart} 
+          className="start-btn pulse"
+        >
           Enter Anonymously
-        </button>
-      </header>
+        </motion.button>
+      </motion.header>
 
       <style>{`
         .landing-page {
           min-height: 100vh;
+          overflow: hidden;
+          position: relative;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: #0f172a;
-          color: white;
           padding: 2rem;
-          text-align: center;
+          background: var(--bg-dark);
         }
-        .title {
-          font-size: 4rem;
-          margin-bottom: 0.5rem;
-          background: linear-gradient(to right, #38bdf8, #818cf8);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
+        .bg-blobs {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          z-index: 0;
         }
-        .subtitle {
-          font-size: 1.5rem;
-          color: #94a3b8;
-          max-width: 600px;
-          margin-bottom: 3rem;
+        .blob {
+          position: absolute;
+          width: 500px;
+          height: 500px;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          filter: blur(100px);
+          opacity: 0.15;
+          border-radius: 50%;
         }
+        .blob-1 { top: -100px; left: -100px; }
+        .blob-2 { bottom: -100px; right: -100px; background: var(--accent); }
+        
+        .hero { z-index: 1; max-width: 1100px; width: 100%; text-align: center; }
+        .title { font-size: 5rem; font-weight: 800; margin-bottom: 1rem; }
+        .subtitle { font-size: 1.4rem; color: var(--text-muted); margin-bottom: 4rem; }
+        
         .features {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 2rem;
-          max-width: 1000px;
-          margin-bottom: 4rem;
+          margin-bottom: 5rem;
         }
-        .feature-card {
-          background: rgba(30, 41, 59, 0.5);
-          padding: 1.5rem;
-          border-radius: 1rem;
-          border: 1px solid rgba(148, 163, 184, 0.1);
-          backdrop-filter: blur(10px);
-        }
-        .feature-card h3 {
-          color: #38bdf8;
-          margin-bottom: 0.5rem;
-        }
-        .feature-card p {
-          color: #94a3b8;
-        }
+        .feature-card { padding: 2rem; border-radius: 2rem; }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .feature-card h3 { color: var(--primary); margin-bottom: 1rem; font-size: 1.5rem; }
+        
         .start-btn {
-          background: #38bdf8;
-          color: #0f172a;
-          padding: 1rem 2.5rem;
-          font-size: 1.25rem;
-          font-weight: bold;
-          border-radius: 3rem;
+          background: linear-gradient(135deg, var(--primary), var(--secondary));
+          color: white;
+          padding: 1.2rem 3.5rem;
+          font-size: 1.4rem;
+          font-weight: 700;
+          border-radius: 4rem;
           border: none;
+          box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.4);
           cursor: pointer;
-          transition: transform 0.2s, background 0.2s;
         }
-        .start-btn:hover {
-          background: #7dd3fc;
-          transform: translateY(-2px);
+        
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
         }
+        .pulse { animation: pulse 2s infinite; }
       `}</style>
     </div>
   );

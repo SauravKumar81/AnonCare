@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import authRoutes from './routes/auth';
 import aiRoutes from './routes/ai';
+import therapistRoutes from './routes/therapists';
 import { setupSocket } from './socket/chat';
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/therapists', therapistRoutes);
 
 app.get('/', (req, res) => {
   res.send('AnonCare API is running...');

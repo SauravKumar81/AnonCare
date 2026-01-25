@@ -45,6 +45,30 @@ export const setupSocket = (io: Server) => {
       }
     });
 
+    socket.on('join_session', (sessionId: string) => {
+      socket.join(sessionId);
+      console.log(`User ${user.alias} joined session: ${sessionId}`);
+    });
+
+    socket.on('webrtc_offer', (data: { sessionId: string, offer: any }) => {
+      socket.to(data.sessionId).emit('webrtc_offer', {
+        offer: data.offer,
+        senderAlias: user.alias
+      });
+    });
+
+    socket.on('webrtc_answer', (data: { sessionId: string, answer: any }) => {
+      socket.to(data.sessionId).emit('webrtc_answer', {
+        answer: data.answer
+      });
+    });
+
+    socket.on('webrtc_ice_candidate', (data: { sessionId: string, candidate: any }) => {
+      socket.to(data.sessionId).emit('webrtc_ice_candidate', {
+        candidate: data.candidate
+      });
+    });
+
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${user.alias}`);
     });

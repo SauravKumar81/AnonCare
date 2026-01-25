@@ -47,17 +47,19 @@ const Chat: React.FC = () => {
     if (!inputText.trim()) return;
 
     if (isAIActive) {
+      const messageText = inputText;
+      // Local addition for AI chat
       const userMessage: Message = {
         _id: Date.now().toString(),
         sender: { _id: user!.id, alias: user!.alias },
-        text: inputText,
+        text: messageText,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, userMessage]);
       setInputText('');
 
       try {
-        const { data } = await aiApi.chat(inputText);
+        const { data } = await aiApi.chat(messageText);
         const aiMessage: Message = {
           _id: (Date.now() + 1).toString(),
           sender: { _id: 'ai', alias: 'AI Companion' },
@@ -66,8 +68,10 @@ const Chat: React.FC = () => {
           isAI: true
         };
         setMessages(prev => [...prev, aiMessage]);
-      } catch (err) {
+      } catch (err: any) {
         console.error('AI chat error', err);
+        const errorMessage = err.response?.data?.message || 'AI Support is currently unavailable.';
+        alert(errorMessage);
       }
     } else {
       socketRef.current?.emit('send_message', { text: inputText });

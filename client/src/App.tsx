@@ -5,6 +5,7 @@ import Chat from './pages/Chat';
 import TherapistList from './pages/TherapistList';
 import BookAppointment from './pages/BookAppointment';
 import MyAppointments from './pages/MyAppointments';
+import VideoCall from './pages/VideoCall';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -51,6 +52,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyAppointments />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/call/:sessionId" 
+            element={
+              <ProtectedRoute>
+                <VideoCall />
               </ProtectedRoute>
             } 
           />

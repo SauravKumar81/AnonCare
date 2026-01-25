@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 interface Appointment {
@@ -14,6 +15,7 @@ interface Appointment {
 const MyAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -47,7 +49,7 @@ const MyAppointments: React.FC = () => {
                 <span className={`status ${a.status}`}>{a.status}</span>
               </div>
               {a.status === 'confirmed' && (
-                <button className="join-btn">Join Call</button>
+                <button onClick={() => navigate(`/call/${a._id}`)} className="join-btn">Join Call</button>
               )}
             </div>
           ))}

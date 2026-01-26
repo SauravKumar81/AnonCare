@@ -9,6 +9,7 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema({
   alias: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, sparse: true }, // Sparse allows multiple null values
   isTherapist: { type: Boolean, default: false },
   customAgentPersona: { type: String },
   createdAt: { type: Date, default: Date.now }

@@ -10,8 +10,13 @@ const Landing: React.FC = () => {
     try {
       await login();
       navigate('/chat');
-    } catch (err) {
-      alert('Failed to start anonymous session. Please check your connection.');
+    } catch (err: any) {
+      console.error('Login Error Details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      alert('Failed to start anonymous session. Check console for details or ensure your server is running.');
     }
   };
 

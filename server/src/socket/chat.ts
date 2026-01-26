@@ -5,12 +5,19 @@ import jwt from 'jsonwebtoken';
 export const setupSocket = (io: Server) => {
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
+    console.log('Socket connection attempt with token:', token ? 'exists' : 'missing');
+    
     if (!token) {
+      console.error('Socket Auth Error: No token provided');
       return next(new Error('Authentication error'));
     }
     jwt.verify(token, process.env.JWT_SECRET || 'secret', (err: any, decoded: any) => {
-      if (err) return next(new Error('Authentication error'));
+      if (err) {
+        console.error('Socket Auth Error: JWT verification failed', err.message);
+        return next(new Error('Authentication error'));
+      }
       (socket as any).user = decoded;
+      console.log('Socket Auth Success for user:', decoded.alias);
       next();
     });
   });

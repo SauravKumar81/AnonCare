@@ -28,7 +28,8 @@ const VideoCall: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    socketRef.current = io('http://localhost:5000', { auth: { token } });
+    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    socketRef.current = io(socketUrl, { auth: { token } });
 
     const startCall = async () => {
       try {

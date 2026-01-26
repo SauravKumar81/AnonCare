@@ -12,14 +12,22 @@ import { setupSocket } from './socket/chat';
 
 const app = express();
 const httpServer = createServer(app);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:3000'
+].filter(Boolean) as string[];
+
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
     methods: ['GET', 'POST']
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : '*'
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);

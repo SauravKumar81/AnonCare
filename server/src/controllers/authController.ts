@@ -39,6 +39,7 @@ export const anonymousLogin = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
+    console.error('Anonymous login failed:', error);
     res.status(500).json({ message: 'Error during anonymous login', error });
   }
 };

@@ -18,16 +18,23 @@ const allowedOrigins = [
   'http://localhost:3000'
 ].filter(Boolean) as string[];
 
+const corsOptions = {
+  origin: allowedOrigins.length > 0 ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback to allowing everything if FRONTEND_URL is misconfigured, for easier debugging
+    }
+  } : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+};
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
-app.use(cors({
-  origin: allowedOrigins.length > 0 ? allowedOrigins : '*'
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);

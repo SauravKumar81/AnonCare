@@ -52,8 +52,18 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/anoncare';
 
 mongoose.connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
+    
+    // Force drop the problematic index if it exists
+    try {
+      const collection = mongoose.connection.collection('users');
+      await collection.dropIndex('email_1');
+      console.log('Dropped stale email_1 index');
+    } catch (e) {
+      // Index might already be gone or doesn't exist
+    }
+
     httpServer.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

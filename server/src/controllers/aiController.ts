@@ -14,16 +14,18 @@ const getAIResponse = async (userMessage: string) => {
   let model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   
   try {
+    console.log('Fetching AI response for:', userMessage);
     const result = await model.generateContent(userMessage);
     const response = await result.response;
-    return response.text();
+    const text = response.text();
+    console.log('AI Response successful:', text.substring(0, 50) + '...');
+    return text;
   } catch (modelError: any) {
-    if (modelError.message?.includes('not found')) {
-      model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(userMessage);
-      const response = await result.response;
-      return response.text();
-    }
+    console.error('Gemini API Error:', {
+      status: modelError.status,
+      message: modelError.message,
+      stack: modelError.stack
+    });
     throw modelError;
   }
 };
@@ -53,6 +55,7 @@ export const chatWithAI = async (req: AuthRequest, res: Response) => {
   try {
     const { text } = req.body;
     const userId = req.user?.userId;
+    console.log('Received chat request from user:', userId, 'Text:', text);
 
     if (!text) return res.status(400).json({ message: 'Message text is required' });
 
@@ -61,9 +64,17 @@ export const chatWithAI = async (req: AuthRequest, res: Response) => {
 
     const aiResponseText = await getAIResponse(text);
     
+    if (!aiResponseText) {
+      console.error('AI Error: Gemini returned empty response');
+      return res.status(500).json({ message: 'AI returned an empty response. Please try again.' });
+    }
+    
     res.status(200).json({ reply: aiResponseText, timestamp: new Date() });
-  } catch (error) {
-    console.error('AI Chat Error:', error);
-    res.status(503).json({ message: 'AI service is currently under maintenance' });
+  } catch (error: any) {
+    console.error('AI Chat Error (Outer):', error.message || error);
+    res.status(500).json({ 
+      message: 'AI Service Error', 
+      error: error.message || 'Unknown error' 
+    });
   }
 };

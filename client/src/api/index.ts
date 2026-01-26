@@ -17,7 +17,8 @@ export const authApi = {
 };
 
 export const aiApi = {
-  chat: (text: string) => api.post('/ai/chat', { text })
+  chat: (text: string) => api.post('/ai/chat', { text }),
+  createAgent: (description: string) => api.post('/ai/create-agent', { description })
 };
 
 export default api;

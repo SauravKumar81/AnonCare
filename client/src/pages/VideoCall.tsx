@@ -28,7 +28,7 @@ const VideoCall: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    socketRef.current = io('/', { auth: { token } });
+    socketRef.current = io('http://localhost:5000', { auth: { token } });
 
     const startCall = async () => {
       try {

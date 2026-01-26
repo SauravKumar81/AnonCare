@@ -17,7 +17,7 @@ const Navbar: React.FC = () => {
 
   const links = [
     { name: 'Community Chat', path: '/chat' },
-    { name: 'Find Therapists', path: '/therapists' },
+    { name: 'Find Support', path: '/find-support' },
     { name: 'My Sessions', path: '/my-appointments' },
   ];
 

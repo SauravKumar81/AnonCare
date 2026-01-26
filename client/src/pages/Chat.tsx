@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { aiApi } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 interface Message {
   _id: string;
@@ -25,8 +26,9 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    socketRef.current = io('/', {
-      auth: { token }
+    socketRef.current = io('http://localhost:5000', {
+      auth: { token },
+      transports: ['websocket']
     });
 
     socketRef.current.on('receive_message', (message: Message) => {
@@ -71,7 +73,12 @@ const Chat: React.FC = () => {
       } catch (err: any) {
         console.error('AI chat error', err);
         const errorMessage = err.response?.data?.message || 'AI Support is currently unavailable.';
-        alert(errorMessage);
+        toast.error(errorMessage, {
+          icon: '🛠️',
+          duration: 4000
+        });
+        // Remove the empty user message from UI if AI fails
+        setMessages(prev => prev.filter(m => m._id !== userMessage._id));
       }
     } else {
       socketRef.current?.emit('send_message', { text: inputText });

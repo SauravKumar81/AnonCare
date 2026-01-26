@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -41,7 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/therapists', therapistRoutes);
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('AnonCare API is running...');
 });
 

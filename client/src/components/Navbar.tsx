@@ -13,8 +13,8 @@ const Navbar: React.FC = () => {
     navigate('/');
   };
 
-  if (!user) return null;
-  if (location.pathname === '/chat' || location.pathname === '/find-support') return null;
+  const hideNavbarRoutes = ['/', '/chat', '/find-support'];
+  if (!user || hideNavbarRoutes.includes(location.pathname)) return null;
 
   const links = [
     { name: 'Community Chat', path: '/chat' },

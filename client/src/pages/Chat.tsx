@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { aiApi } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './Chat.css';
 
@@ -26,31 +26,16 @@ const MOODS = [
   { emoji: '😊', label: 'Good' },
 ];
 
-const INTENTIONS = [
-  '"In the middle of difficulty lies opportunity." — Finding peace within the chaos of the week.',
-  '"You are enough, just as you are." — Embracing self-compassion in every moment.',
-  '"The only way out is through." — Courage to face what needs to be felt.',
-  '"This too shall pass." — Trust in the rhythm of healing.',
-];
-
 const Chat: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isAIActive, setIsAIActive] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
-  const [activeSidebar, setActiveSidebar] = useState('sessions');
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const dailyIntention = INTENTIONS[new Date().getDay() % INTENTIONS.length];
-
-  // Tracker bar heights simulate week mood data
-  const moodBars = [60, 45, 75, 50, 85];
-  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -120,18 +105,11 @@ const Chat: React.FC = () => {
   const formatTime = (date: Date) =>
     new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
 
-  const sidebarItems = [
-    { id: 'journal', icon: '📓', label: 'Journal', path: '/chat' },
-    { id: 'sessions', icon: '💬', label: 'Sessions', path: '/chat' },
-    { id: 'groups', icon: '👥', label: 'Groups', path: '/find-support' },
-    { id: 'settings', icon: '⚙️', label: 'Settings', path: '/chat' },
-  ];
-
   return (
     <div className="chat-sanctuary">
       {/* ===== Top Navigation ===== */}
       <nav className="sanctuary-topnav">
-        <div className="topnav-brand">AnonCare</div>
+        <div className="topnav-brand" onClick={() => navigate('/')}>AnonCare</div>
         <div className="topnav-links">
           <a href="#" onClick={(e) => { e.preventDefault(); }}>Explore</a>
           <a href="#" onClick={(e) => { e.preventDefault(); navigate('/find-support'); }}>Community</a>
@@ -139,41 +117,13 @@ const Chat: React.FC = () => {
         </div>
         <div className="topnav-actions">
           <div className="topnav-avatar">👤</div>
-          <button className="topnav-start-btn" onClick={() => { logout(); navigate('/'); }}>
+          <button className="topnav-logout-btn" onClick={() => { logout(); navigate('/'); }}>
             Logout
           </button>
         </div>
       </nav>
 
-      {/* ===== Left Sidebar ===== */}
-      <aside className="sanctuary-sidebar">
-        <div className="sidebar-greeting">
-          <h3>Welcome Back</h3>
-          <p>Your sanctuary is ready.</p>
-        </div>
-
-        <div className="sidebar-nav">
-          {sidebarItems.map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-nav-item ${activeSidebar === item.id ? 'active' : ''}`}
-              onClick={() => {
-                setActiveSidebar(item.id);
-                if (item.path !== location.pathname) navigate(item.path);
-              }}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <button className="sidebar-breathing-btn">
-          🫧 Start Breathing Exercise
-        </button>
-      </aside>
-
-      {/* ===== Main Chat Panel ===== */}
+      {/* ===== Chat Content ===== */}
       <main className="sanctuary-chat-main">
         <div className="chat-journey-label">
           <span>Today's Journey</span>
@@ -303,59 +253,6 @@ const Chat: React.FC = () => {
           </div>
         </form>
       </main>
-
-      {/* ===== Right Sidebar ===== */}
-      <aside className="sanctuary-right-panel">
-        <div className="daily-intention">
-          <h4>Daily Intention</h4>
-          <div className="intention-card">
-            <p>{dailyIntention}</p>
-          </div>
-        </div>
-
-        <div className="mood-tracker">
-          <h5>Mood Tracker</h5>
-          <div className="tracker-bars">
-            {days.map((day, i) => (
-              <div className="tracker-bar-col" key={day}>
-                <div className="tracker-bar" style={{ height: `${moodBars[i]}%` }}></div>
-                <span className={`tracker-day ${i === days.length - 1 ? 'today' : ''}`}>{day}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="calm-space">
-          <h5>Calm Space</h5>
-          <div className="calm-space-card">
-            <div style={{
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(135deg, #1a3022, #0d1a12, #1a2a1a)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '2rem',
-              opacity: 0.7,
-            }}>
-              🌲🌳🌿
-            </div>
-            <div className="calm-space-overlay"></div>
-            <button className="calm-play-btn">▶</button>
-          </div>
-        </div>
-      </aside>
-
-      {/* ===== Footer ===== */}
-      <footer className="sanctuary-footer">
-        <div className="footer-brand">AnonCare</div>
-        <div className="footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#" className="crisis">Crisis Support</a>
-        </div>
-        <div className="footer-copy">© 2026 AnonCare. A Sanctuary of Shadows.</div>
-      </footer>
     </div>
   );
 };

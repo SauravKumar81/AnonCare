@@ -3,7 +3,9 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { aiApi } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import './Chat.css';
 
 interface Message {
   _id: string;
@@ -16,13 +18,39 @@ interface Message {
   isAI?: boolean;
 }
 
+const MOODS = [
+  { emoji: '😔', label: 'Low' },
+  { emoji: '😟', label: 'Anxious' },
+  { emoji: '😐', label: 'Okay' },
+  { emoji: '🙂', label: 'Better' },
+  { emoji: '😊', label: 'Good' },
+];
+
+const INTENTIONS = [
+  '"In the middle of difficulty lies opportunity." — Finding peace within the chaos of the week.',
+  '"You are enough, just as you are." — Embracing self-compassion in every moment.',
+  '"The only way out is through." — Courage to face what needs to be felt.',
+  '"This too shall pass." — Trust in the rhythm of healing.',
+];
+
 const Chat: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
-  const [isAIActive, setIsAIActive] = useState(false);
+  const [isAIActive, setIsAIActive] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const [activeSidebar, setActiveSidebar] = useState('sessions');
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const dailyIntention = INTENTIONS[new Date().getDay() % INTENTIONS.length];
+
+  // Tracker bar heights simulate week mood data
+  const moodBars = [60, 45, 75, 50, 85];
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -55,7 +83,6 @@ const Chat: React.FC = () => {
 
     if (isAIActive) {
       const messageText = inputText;
-      // Local addition for AI chat
       const userMessage: Message = {
         _id: Date.now().toString(),
         sender: { _id: user!.id, alias: user!.alias },
@@ -64,25 +91,24 @@ const Chat: React.FC = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       setInputText('');
+      setIsTyping(true);
 
       try {
         const { data } = await aiApi.chat(messageText);
+        setIsTyping(false);
         const aiMessage: Message = {
           _id: (Date.now() + 1).toString(),
-          sender: { _id: 'ai', alias: 'AI Companion' },
+          sender: { _id: 'ai', alias: 'Sanctuary AI' },
           text: data.reply,
           timestamp: new Date(),
           isAI: true
         };
         setMessages(prev => [...prev, aiMessage]);
       } catch (err: any) {
+        setIsTyping(false);
         console.error('AI chat error', err);
         const errorMessage = err.response?.data?.message || 'AI Support is currently unavailable.';
-        toast.error(errorMessage, {
-          icon: '🛠️',
-          duration: 4000
-        });
-        // Remove the empty user message from UI if AI fails
+        toast.error(errorMessage, { icon: '🛠️', duration: 4000 });
         setMessages(prev => prev.filter(m => m._id !== userMessage._id));
       }
     } else {
@@ -91,161 +117,245 @@ const Chat: React.FC = () => {
     }
   };
 
+  const formatTime = (date: Date) =>
+    new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+
+  const sidebarItems = [
+    { id: 'journal', icon: '📓', label: 'Journal', path: '/chat' },
+    { id: 'sessions', icon: '💬', label: 'Sessions', path: '/chat' },
+    { id: 'groups', icon: '👥', label: 'Groups', path: '/find-support' },
+    { id: 'settings', icon: '⚙️', label: 'Settings', path: '/chat' },
+  ];
+
   return (
-    <div className="chat-container">
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="chat-header glass-card"
-      >
-        <div className="header-info">
-          <h2>Community Support</h2>
-          <span className="user-alias">Talking as: <strong>{user?.alias}</strong></span>
+    <div className="chat-sanctuary">
+      {/* ===== Top Navigation ===== */}
+      <nav className="sanctuary-topnav">
+        <div className="topnav-brand">AnonCare</div>
+        <div className="topnav-links">
+          <a href="#" onClick={(e) => { e.preventDefault(); }}>Explore</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/find-support'); }}>Community</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); }}>Resources</a>
         </div>
-        <div className="controls">
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={isAIActive} 
-              onChange={() => setIsAIActive(!isAIActive)} 
-            />
-            <span className="slider round"></span>
-            <span className="label-text">AI Companion</span>
-          </label>
+        <div className="topnav-actions">
+          <div className="topnav-avatar">👤</div>
+          <button className="topnav-start-btn" onClick={() => { logout(); navigate('/'); }}>
+            Logout
+          </button>
         </div>
-      </motion.div>
+      </nav>
 
-      <div className="messages-list">
-        <AnimatePresence>
-          {messages.map((msg) => (
-            <motion.div 
-              key={msg._id} 
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className={`message-wrapper ${msg.sender._id === user?.id ? 'own' : ''} ${msg.isAI ? 'ai' : ''}`}
+      {/* ===== Left Sidebar ===== */}
+      <aside className="sanctuary-sidebar">
+        <div className="sidebar-greeting">
+          <h3>Welcome Back</h3>
+          <p>Your sanctuary is ready.</p>
+        </div>
+
+        <div className="sidebar-nav">
+          {sidebarItems.map(item => (
+            <button
+              key={item.id}
+              className={`sidebar-nav-item ${activeSidebar === item.id ? 'active' : ''}`}
+              onClick={() => {
+                setActiveSidebar(item.id);
+                if (item.path !== location.pathname) navigate(item.path);
+              }}
             >
-              <div className="message-info">
-                <span className="sender">{msg.sender.alias}</span>
-                <span className="time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <div className="message-bubble glass-card">{msg.text}</div>
-            </motion.div>
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
           ))}
-        </AnimatePresence>
-        <div ref={scrollRef} />
-      </div>
+        </div>
 
-      <motion.form 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={handleSendMessage} 
-        className="chat-input-area glass-card"
-      >
-        <input
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={isAIActive ? "Ask the AI Companion..." : "Message the community..."}
-        />
-        <button type="submit" className="send-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        <button className="sidebar-breathing-btn">
+          🫧 Start Breathing Exercise
         </button>
-      </motion.form>
+      </aside>
 
-      <style>{`
-        .chat-container {
-          height: calc(100vh - 70px);
-          max-width: 1000px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          padding: 1.5rem;
-          gap: 1.5rem;
-        }
-        .chat-header {
-          padding: 1.2rem 2rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-radius: 1.5rem;
-        }
-        .header-info h2 { margin: 0; font-size: 1.5rem; color: var(--primary); }
-        .user-alias { font-size: 0.85rem; color: var(--text-muted); }
-        
-        .messages-list {
-          flex: 1;
-          overflow-y: auto;
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.2rem;
-          mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
-        }
-        .message-wrapper { max-width: 75%; display: flex; flex-direction: column; }
-        .message-wrapper.own { align-self: flex-end; align-items: flex-end; }
-        
-        .sender { font-size: 0.8rem; color: var(--primary); margin-bottom: 0.3rem; font-weight: 500; }
-        .time { font-size: 0.7rem; color: var(--text-muted); margin-left: 0.5rem; }
-        
-        .message-bubble {
-          padding: 1rem 1.4rem;
-          border-radius: 1.5rem;
-          line-height: 1.5;
-          font-size: 0.95rem;
-        }
-        .own .message-bubble { 
-          background: linear-gradient(135deg, var(--primary), var(--secondary));
-          color: white;
-          border-radius: 1.5rem 1.5rem 0 1.5rem;
-          border: none;
-        }
-        .ai .message-bubble { 
-          border: 1.5px solid var(--accent);
-          box-shadow: 0 0 15px rgba(244, 114, 182, 0.2);
-        }
+      {/* ===== Main Chat Panel ===== */}
+      <main className="sanctuary-chat-main">
+        <div className="chat-journey-label">
+          <span>Today's Journey</span>
+        </div>
 
-        .chat-input-area {
-          padding: 0.8rem;
-          display: flex;
-          gap: 0.8rem;
-          border-radius: 4rem;
-        }
-        .chat-input-area input {
-          flex: 1;
-          padding: 1rem 1.5rem;
-          border-radius: 3rem;
-          border: none;
-          background: var(--glass-bg);
-          color: white;
-          outline: none;
-        }
-        .send-btn {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          background: var(--primary);
-          color: white;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
-        }
+        {/* Mode Toggle */}
+        <div className="mode-toggle-container">
+          <div className="mode-toggle">
+            <button
+              className={`mode-btn ${isAIActive ? 'active' : ''}`}
+              onClick={() => setIsAIActive(true)}
+            >
+              ✨ AI Session
+            </button>
+            <button
+              className={`mode-btn ${!isAIActive ? 'active' : ''}`}
+              onClick={() => setIsAIActive(false)}
+            >
+              👥 Community
+            </button>
+          </div>
+        </div>
 
-        /* Toggle Switch */
-        .switch { position: relative; display: flex; align-items: center; gap: 0.8rem; cursor: pointer; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-          position: relative; width: 44px; height: 22px;
-          background-color: #334155; transition: .4s; border-radius: 34px;
-        }
-        .slider:before {
-          position: absolute; content: ""; height: 16px; width: 16px;
-          left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(22px); }
-        .label-text { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-      `}</style>
+        {/* Messages */}
+        <div className="messages-area">
+          {messages.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="msg-row"
+            >
+              <div className="msg-avatar ai-avatar">✨</div>
+              <div className="msg-body">
+                <div className="msg-bubble ai-bubble">
+                  Good evening. I've noticed you've been carrying a lot lately. 
+                  This space is here for whatever you need to release. How is your 
+                  heart feeling in this moment?
+                </div>
+                <div className="msg-meta">
+                  <span className="meta-sender">Sanctuary AI</span>
+                  <span>•</span>
+                  <span>{formatTime(new Date())}</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          <AnimatePresence>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg._id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`msg-row ${msg.sender._id === user?.id ? 'user-msg' : ''}`}
+              >
+                {msg.isAI && (
+                  <div className="msg-avatar ai-avatar">✨</div>
+                )}
+                <div className="msg-body">
+                  <div className={`msg-bubble ${msg.isAI ? 'ai-bubble' : msg.sender._id === user?.id ? 'user-bubble' : 'ai-bubble'}`}>
+                    {msg.text}
+                  </div>
+                  <div className="msg-meta">
+                    {msg.isAI && <span className="meta-sender">{msg.sender.alias}</span>}
+                    {msg.isAI && <span>•</span>}
+                    <span>{formatTime(msg.timestamp)}</span>
+                    {msg.sender._id === user?.id && (
+                      <span className="meta-read">Read</span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {isTyping && (
+            <div className="typing-indicator">
+              <div className="msg-avatar ai-avatar" style={{ width: 30, height: 30, fontSize: '0.75rem' }}>✨</div>
+              <div className="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          )}
+
+          <div ref={scrollRef} />
+        </div>
+
+        {/* Mood Selector */}
+        <div className="mood-selector">
+          <div className="mood-selector-inner">
+            {MOODS.map((mood, i) => (
+              <button
+                key={mood.label}
+                className={`mood-option ${selectedMood === i ? 'selected' : ''}`}
+                onClick={() => setSelectedMood(i)}
+              >
+                <span className="mood-emoji">{mood.emoji}</span>
+                <span className="mood-label">{mood.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Input Area */}
+        <form className="sanctuary-input-area" onSubmit={handleSendMessage}>
+          <div className="input-container">
+            <input
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Journal your thoughts here..."
+            />
+            <button type="button" className="input-attach-btn" title="Attach">
+              🔗
+            </button>
+            <button type="submit" className="input-send-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div className="input-privacy-notice">
+            Your thoughts are private and encrypted in the sanctuary.
+          </div>
+        </form>
+      </main>
+
+      {/* ===== Right Sidebar ===== */}
+      <aside className="sanctuary-right-panel">
+        <div className="daily-intention">
+          <h4>Daily Intention</h4>
+          <div className="intention-card">
+            <p>{dailyIntention}</p>
+          </div>
+        </div>
+
+        <div className="mood-tracker">
+          <h5>Mood Tracker</h5>
+          <div className="tracker-bars">
+            {days.map((day, i) => (
+              <div className="tracker-bar-col" key={day}>
+                <div className="tracker-bar" style={{ height: `${moodBars[i]}%` }}></div>
+                <span className={`tracker-day ${i === days.length - 1 ? 'today' : ''}`}>{day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="calm-space">
+          <h5>Calm Space</h5>
+          <div className="calm-space-card">
+            <div style={{
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #1a3022, #0d1a12, #1a2a1a)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              opacity: 0.7,
+            }}>
+              🌲🌳🌿
+            </div>
+            <div className="calm-space-overlay"></div>
+            <button className="calm-play-btn">▶</button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ===== Footer ===== */}
+      <footer className="sanctuary-footer">
+        <div className="footer-brand">AnonCare</div>
+        <div className="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#" className="crisis">Crisis Support</a>
+        </div>
+        <div className="footer-copy">© 2026 AnonCare. A Sanctuary of Shadows.</div>
+      </footer>
     </div>
   );
 };

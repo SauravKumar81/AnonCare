@@ -14,6 +14,7 @@ const Navbar: React.FC = () => {
   };
 
   if (!user) return null;
+  if (location.pathname === '/chat') return null;
 
   const links = [
     { name: 'Community Chat', path: '/chat' },
